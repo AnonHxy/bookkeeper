@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -105,10 +106,15 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             }
             errorCode = BookieProtocol.ENOENTRY;
         } catch (IOException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", request, e);
+            if (e.getCause() instanceof DefaultEntryLogger.EntryLookupException && !request.isFencing()) {
+                LOG.error("EntryLookupException while reading entry {}", request, e);
+                errorCode = BookieProtocol.ENOENTRY;
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Error reading {}", request, e);
+                }
+                errorCode = BookieProtocol.EIO;
             }
-            errorCode = BookieProtocol.EIO;
         } catch (BookieException.DataUnknownException e) {
             LOG.error("Ledger {} is in an unknown state", request.getLedgerId(), e);
             errorCode = BookieProtocol.EUNKNOWNLEDGERSTATE;

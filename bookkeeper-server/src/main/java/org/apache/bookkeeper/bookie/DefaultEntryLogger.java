@@ -702,7 +702,7 @@ public class DefaultEntryLogger implements EntryLogger {
      * Exception type for representing lookup errors.  Useful for disambiguating different error
      * conditions for reporting purposes.
      */
-    static class EntryLookupException extends Exception {
+    public static class EntryLookupException extends Exception {
         EntryLookupException(String message) {
             super(message);
         }
